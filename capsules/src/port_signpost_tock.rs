@@ -82,6 +82,8 @@ impl<'a> PortSignpostTock<'a> {
 	}
 
 	pub fn i2c_master_write(&self, address: u8, len: u16) -> ReturnCode {
+
+		debug!("Signbus_Port");
 		
 		self.master_tx_buffer.take().map(|buffer|{
 			hil::i2c::I2CMaster::enable(self.i2c);

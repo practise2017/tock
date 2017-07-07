@@ -394,6 +394,13 @@ pub unsafe fn reset_handler() {
 			&mut capsules::signbus_protocol_layer::BUFFER0,
 			&mut capsules::signbus_protocol_layer::BUFFER1
 		));
+	
+	// Signbus App Layer
+	let signbus_app_layer = static_init!(
+		capsules::signbus_app_layer::SignbusAppLayer<'static>,
+		capsules::signbus_app_layer::SignbusAppLayer::new(signbus_protocol_layer,
+			&mut capsules::signbus_app_layer::BUFFER0
+		));
 
 /* 
 	let port_signpost_tock_virtual_alarm = static_init!(
@@ -462,7 +469,14 @@ pub unsafe fn reset_handler() {
 
 	//signbus_io_interface.signbus_io_send(0x28, false, &mut capsules::signbus_io_interface::BUFFER2, 256);
 
-	signbus_protocol_layer.signbus_protocol_send(0x28, &mut capsules::signbus_protocol_layer::BUFFER2, 256);
+	//signbus_protocol_layer.signbus_protocol_send(0x28, &mut capsules::signbus_protocol_layer::BUFFER2, 256);
+
+	signbus_app_layer.signbus_app_send(0x28, 
+					capsules::signbus_app_layer::SignbusFrameType::NotificationFrame,
+					capsules::signbus_app_layer::SignbusApiType::InitializationApiType,
+					2,
+					10,	
+					&mut capsules::signbus_protocol_layer::BUFFER2[0..10]);
 
     // debug!("Initialization complete. Entering main loop");
     kernel::main(&hail, &mut chip, load_processes(), &hail.ipc);

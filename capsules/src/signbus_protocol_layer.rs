@@ -40,8 +40,8 @@ impl<'a> SignbusProtocolLayer<'a,> {
 								data: &'static mut [u8],
 								len: u16) -> ReturnCode {
 		
+		debug!("Signbus_Protocol");
 		let encrypted: bool = false;
-		debug!("Signbus Protocol Send");
 		self.signbus_io_interface.signbus_io_send(address, encrypted, data, len)
 	}
 	

@@ -18,7 +18,6 @@ use signbus_protocol_layer;
 
 pub static mut BUFFER0: [u8; 256] = [0; 256];
 pub static mut BUFFER1: [u8; 256] = [0; 256];
-pub static mut BUFFER2: [u8; 256] = [1; 256];
 
 
 pub struct App {
@@ -41,14 +40,14 @@ impl Default for App {
 	}
 }
 
-pub enum signbus_frame_type_t {
+pub enum SignbusFrameType {
     NotificationFrame = 0,
     CommandFrame = 1,
     ResponseFrame = 2,
     ErrorFrame = 3,
 }
 
-pub enum signbus_api_type_t {
+pub enum SignbusApiType {
     InitializationApiType = 1,
     StorageApiType = 2,
     NetworkingApiType = 3,
@@ -63,32 +62,50 @@ pub enum signbus_api_type_t {
 
 pub struct SignbusAppLayer<'a> {
 	signbus_protocol_layer: 	&'a signbus_protocol_layer::SignbusProtocolLayer<'a>,
+	payload:					TakeCell <'static, [u8]>,
 }
 
 impl<'a> SignbusAppLayer<'a,> {
-	pub fn new(signbus_protocol_layer: &'a signbus_protocol_layer::SignbusProtocolLayer<'a>
-	
-	) -> SignbusAppLayer <'a> {
+	pub fn new(signbus_protocol_layer: &'a signbus_protocol_layer::SignbusProtocolLayer<'a>,
+				payload: &'static mut [u8]) -> SignbusAppLayer <'a> {
 		
 		SignbusAppLayer {
-			signbus_protocol_layer:  		signbus_protocol_layer,
+			signbus_protocol_layer:  	signbus_protocol_layer,
+			payload:					TakeCell::new(payload),
 		}
 	}
 
 	pub fn signbus_app_send(&self, 
 							address: u8,
-							frame_type: signbus_frame_type_t,
-							api_type: signbus_api_type_t,
+							frame_type: SignbusFrameType,
+							api_type: SignbusApiType,
 							message_type: u8,
 							message_length: u16,
 							message: &'static mut [u8]) -> ReturnCode {
 		
+		debug!("Signbus_App");
+		
+		let mut rc = ReturnCode::SUCCESS;
 		let len: u16 = 1 + 1 + 1 + message_length;
+		
+		// Concatenate info onto message
+		// TODO: Greather than 256 could panic
+		self.payload.map(|payload|{
+			payload[0] = frame_type as u8;
+			payload[1] = api_type as u8;
+			payload[2] = message_type;
+			
+			let d = &mut payload.as_mut()[3..len as usize];
+			for (i, c) in message[0..message_length as usize].iter().enumerate() {
+				d[i] = *c;
+			}	
+		});
 
+		self.payload.take().map(|payload|{
+			rc = self.signbus_protocol_layer.signbus_protocol_send(address, payload, len);
+		});
 
-
-		//self.signbus_protocol_layer.signbus_protocol_send(address);
-		ReturnCode::SUCCESS
+		return rc;
 	}
 	
 }

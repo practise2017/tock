@@ -102,6 +102,8 @@ impl<'a> SignbusIOInterface<'a> {
 							data: &'static mut [u8],
 							len: u16) -> ReturnCode {
 
+		debug!("Signbus_Interface");
+		
 		// update sequence number
 		self.sequence_number.set(self.sequence_number.get() + 1);
 		
